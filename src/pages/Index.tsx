@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Header } from '@/components/Header';
 import { ProductCard, Product } from '@/components/ProductCard';
 import { Cart } from '@/components/Cart';
+import { CategoryFilter } from '@/components/CategoryFilter';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import Icon from '@/components/ui/icon';
+import { products as allProducts, categories } from '@/data/products';
 
 interface CartItem extends Product {
   quantity: number;
@@ -13,56 +15,22 @@ interface CartItem extends Product {
 const Index = () => {
   const [cartOpen, setCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState('Все');
 
-  const products: Product[] = [
-    {
-      id: 1,
-      name: 'Массажное масло с ароматом ванили',
-      price: 1290,
-      originalPrice: 1590,
-      image: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=500&h=500&fit=crop',
-      category: 'Массажные средства',
-      isNew: true,
-    },
-    {
-      id: 2,
-      name: 'Шелковая маска для сна',
-      price: 890,
-      image: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=500&h=500&fit=crop',
-      category: 'Аксессуары',
-    },
-    {
-      id: 3,
-      name: 'Ароматические свечи набор 3 шт',
-      price: 2190,
-      originalPrice: 2690,
-      image: 'https://images.unsplash.com/photo-1602874801006-94c3a1dfd18f?w=500&h=500&fit=crop',
-      category: 'Атмосфера',
-    },
-    {
-      id: 4,
-      name: 'Премиум подарочный набор',
-      price: 4990,
-      image: 'https://images.unsplash.com/photo-1549062572-544a64fb0c56?w=500&h=500&fit=crop',
-      category: 'Подарочные наборы',
-      isNew: true,
-    },
-    {
-      id: 5,
-      name: 'Гель для душа с феромонами',
-      price: 1490,
-      image: 'https://images.unsplash.com/photo-1556229010-aa3e6e30f380?w=500&h=500&fit=crop',
-      category: 'Уход за телом',
-    },
-    {
-      id: 6,
-      name: 'Атласные наручники',
-      price: 790,
-      originalPrice: 990,
-      image: 'https://images.unsplash.com/photo-1583500557349-fb5238f8d946?w=500&h=500&fit=crop',
-      category: 'Аксессуары',
-    },
-  ];
+  const filteredProducts = useMemo(() => {
+    if (selectedCategory === 'Все') {
+      return allProducts;
+    }
+    return allProducts.filter((p) => p.category === selectedCategory);
+  }, [selectedCategory]);
+
+  const productCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    categories.forEach((cat) => {
+      counts[cat] = allProducts.filter((p) => p.category === cat).length;
+    });
+    return counts;
+  }, []);
 
   const handleAddToCart = (product: Product) => {
     setCartItems((prev) => {
@@ -129,15 +97,24 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Популярные товары
+              Каталог товаров
             </h2>
             <p className="text-muted-foreground">
-              Тщательно отобранная коллекция для вашего удовольствия
+              {filteredProducts.length} {filteredProducts.length === 1 ? 'товар' : filteredProducts.length < 5 ? 'товара' : 'товаров'} в каталоге
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {products.map((product) => (
+          <div className="mb-8">
+            <CategoryFilter
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+              productCounts={productCounts}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}
                 product={product}
@@ -145,6 +122,15 @@ const Index = () => {
               />
             ))}
           </div>
+
+          {filteredProducts.length === 0 && (
+            <div className="text-center py-12">
+              <Icon name="Package" size={64} className="mx-auto text-muted-foreground/30 mb-4" />
+              <p className="text-muted-foreground text-lg">
+                Товары не найдены
+              </p>
+            </div>
+          )}
         </div>
       </section>
 
